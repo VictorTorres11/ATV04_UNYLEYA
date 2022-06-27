@@ -1,0 +1,61 @@
+data "aws_ami" "win2019" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ami-0d2ca400b2ba2f69a"]
+  }
+}
+
+resource "aws_instance" "unyleya_ec2" {
+  ami           = data.aws_ami.win2019.id
+  instance_type = "t2.micro"
+  key_name = "###chave###"
+  subnet_id = var.tcb_blog_subnet_public_id
+  vpc_security_group_ids = [aws_security_group.permitir_rdp_http_winrm.id]
+  associate_public_ip_address = true
+
+  tags = {
+    Name = "ATV04UNYLEYA"
+  }
+}
+
+resource "aws_security_group" "permitir_rdp_http_winrm" {
+  name        = "permitir_rdp_http_winrm_ec2"
+  description = "Permite SSH HTTP WINRM na instancia EC2"
+  vpc_id      = var.unyleya_atv04
+
+  ingress {
+    description = "RDP to EC2"
+    from_port   = 3389
+    to_port     = 3389
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "WinRM to EC2"
+    from_port   = 5986
+    to_port     = 5986
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTP to EC2"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "permitir_rdp_http_winrm"
+  }
+}
